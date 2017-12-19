@@ -4,7 +4,7 @@ import org.osbot.rs07.api.map.Area;
 import org.osbot.rs07.api.model.RS2Object;
 import org.script.IronPmScript;
 import org.script.task.MiningTask;
-import org.script.util.SleepInterval;
+import org.script.util.SleepRange;
 
 import java.util.Optional;
 
@@ -14,8 +14,6 @@ import java.util.Optional;
  * @author lare96 <http://github.org/lare96>
  */
 public final class MineIronOre extends MiningTask {
-
-    // TODO: Mine ore, hover next ore, then click as soon as ore is depleted
 
     /**
      * The ore currently being mined.
@@ -35,56 +33,76 @@ public final class MineIronOre extends MiningTask {
     }
 
     @Override
-    public SleepInterval onLoop() {
+    public SleepRange onLoop() {
         if (!provider().inventory.isFull() && provider().inCorrectSpot()) {
             if (!provider().isSpotFree()) {
                 provider().resetMiningPos();
                 provider().walkToSpot();
-                return new SleepInterval(1500, 4000);
+                return new SleepRange(1500, 4000);
             } else {
-                mineIronOre();
-                return new SleepInterval(700, 2000);
+                powermine();
+                return new SleepRange(500, 2000);
             }
         }
-        return SleepInterval.NULL;
+        return SleepRange.NULL;
     }
 
     /**
-     * Allows the bot to mine iron ore.
+     * Allows the bot to powermine iron ore.
      */
-    private void mineIronOre() {
-        provider().setStatus("Powermining iron ore...");
+    private void powermine() {
+        Runnable initialMine = () -> {
+            provider().setStatus("Mining iron ore.");
+            retrieveOre().ifPresent(this::mine);
+        };
 
         if (currentOre == null) {
-            RS2Object mineOre = retrieveOre();
-            if (mineOre == null) {
-                return;
-            }
-            if (mineOre.interact("Mine")) {
-                currentOre = mineOre;
-                nextOre = null;
-            }
-        } else if (currentOre.exists() && nextOre == null) {
-            RS2Object hoverOre = retrieveOre();
-            if (hoverOre == null) {
-                return;
-            }
-            hoverOre.hover();
-            nextOre = hoverOre;
-        } else if (!currentOre.exists() && nextOre != null && nextOre.exists()) {
-            if (nextOre.interact("Mine")) {
-                currentOre = nextOre;
-                nextOre = null;
-            }
+            initialMine.run();
+            return;
+        }
+
+        if (currentOre.exists() && nextOre == null) {
+            provider().setStatus("Hovering over next ore.");
+            retrieveOre().ifPresent(this::hover);
+        } else if (!currentOre.exists() && nextOre.exists()) {
+            provider().setStatus("Mining hovered ore.");
+            mine(nextOre);
+            nextOre = null;
+        } else {
+            currentOre = null;
+            nextOre = null;
+            initialMine.run();
         }
     }
 
-    private RS2Object retrieveOre() {
+    /**
+     * Interacts with the ore.
+     */
+    private void mine(RS2Object ore) {
+        if (ore.interact("Mine")) {
+            currentOre = ore;
+        }
+    }
+
+    /**
+     * Hovers over the ore.
+     */
+    private void hover(RS2Object ore) {
+        if (ore.hover()) {
+            nextOre = ore;
+        }
+    }
+
+    /**
+     * Retrieves the closest available ore.
+     */
+    private Optional<RS2Object> retrieveOre() {
         Area miningArea = provider().myPlayer().getArea(1);
 
         return provider().objects.getAll().stream().
                 filter(RS2Object::exists).
                 filter(miningArea::contains).
-                findFirst().orElse(null);
+                filter(obj -> !obj.equals(currentOre)).
+                findFirst();
     }
 }

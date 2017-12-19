@@ -2,7 +2,7 @@ package org.script.task.impl;
 
 import org.script.IronPmScript;
 import org.script.task.MiningTask;
-import org.script.util.SleepInterval;
+import org.script.util.SleepRange;
 
 /**
  * A mining task that guides the player to the right mining spot.
@@ -19,15 +19,15 @@ public final class LocateMiningSpot extends MiningTask {
     }
 
     @Override
-    public SleepInterval onLoop() {
+    public SleepRange onLoop() {
         if (!provider().inventory.isFull() &&
                 !provider().inCorrectSpot() &&
                 !provider().myPlayer().isMoving()) {
             provider().setStatus(getMessage());
             provider().walkToSpot();
-            return new SleepInterval(1000, 3500);
+            return new SleepRange(1000, 3500);
         }
-        return SleepInterval.NULL;
+        return SleepRange.NULL;
     }
 
     /**

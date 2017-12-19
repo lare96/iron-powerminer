@@ -19,6 +19,7 @@ import java.awt.Graphics2D;
 import java.text.NumberFormat;
 import java.time.LocalTime;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /**
@@ -26,13 +27,10 @@ import java.util.function.Supplier;
  *
  * @author lare96 <http://github.org/lare96>
  */
-@ScriptManifest(logo = "", name = "[IronPmScript] v2.2", author = "lare96", version = 2.2, info = "Will powermine iron in the updated members guild.")
+@ScriptManifest(logo = "", name = "[IronPmScript] v3.0", author = "lare96", version = 3.0, info = "Will mine iron in the updated members guild.")
 public final class IronPmScript extends Script {
 
-    // TODO: add optional dropping functionality
-    // TODO: add usage of bank chest or deposit box functionality
     // TODO: optional idle system, to reduce ban rate
-    // TODO: stick-with-first-rock and hop, or run to second rock and hop functionality
     // TODO: stick with one spot, the entire time (chosen on the first iteration)
 
     /**
@@ -118,7 +116,7 @@ public final class IronPmScript extends Script {
     public void onPaint(Graphics2D g) {
         g.setColor(Color.WHITE);
         g.setFont(new Font("Myriad Pro", Font.BOLD, 16));
-        g.drawString("[IronPowerminer] v2.2", 7, 225);
+        g.drawString("[IronPowerminer] v3.0", 7, 225);
         g.setFont(new Font("Myriad Pro", Font.PLAIN, 14));
 
         LocalTime timePassed = LocalTime.ofSecondOfDay(timeRunning.get());
@@ -152,7 +150,7 @@ public final class IronPmScript extends Script {
      * Returns {@code true} if the player is the only one on their current spot.
      */
     public boolean isSpotFree() {
-       return players.get(myPosition().getX(), myPosition().getY()).stream().allMatch(myPlayer()::equals);
+        return players.get(myPosition().getX(), myPosition().getY()).stream().allMatch(myPlayer()::equals);
     }
 
     /**
@@ -164,24 +162,29 @@ public final class IronPmScript extends Script {
     }
 
     /**
-     * Walks the player to one of the two mining spots. Hops worlds if both spots are taken.
+     * Walks (or runs) the player to one of the two mining spots. Hops worlds if both spots are taken.
      */
     public void walkToSpot() {
-        if (miningPos != null) {
-            WalkingEvent event = new WalkingEvent(miningPos);
+        Consumer<Position> moveFunc = pos -> {
+            WalkingEvent event = new WalkingEvent(pos);
             event.setMinDistanceThreshold(0);
             event.setOperateCamera(true);
 
             execute(event);
-        } else {
+        };
+
+
+        if (miningPos == null) {
             for (Position pos : SPOTS) {
                 if (playerCount(pos) == 0) {
-                    walking.walk(pos);
+                    moveFunc.accept(pos);
                     miningPos = pos;
                     return;
                 }
             }
             worlds.hopToP2PWorld();
+        } else {
+            moveFunc.accept(miningPos);
         }
     }
 

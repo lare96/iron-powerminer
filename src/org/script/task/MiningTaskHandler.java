@@ -1,6 +1,6 @@
 package org.script.task;
 
-import org.script.util.SleepInterval;
+import org.script.util.SleepRange;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +15,7 @@ public final class MiningTaskHandler {
     /**
      * A constant representing the default sleep interval.
      */
-    private static final SleepInterval DEFAULT = new SleepInterval(500, 1500);
+    private static final SleepRange DEFAULT = new SleepRange(500, 1500);
 
     /**
      * A list of mining tasks.
@@ -33,10 +33,10 @@ public final class MiningTaskHandler {
      * Exclusively and directly called from the main script's event loop. Runs the bot by executing all
      * mining tasks in their proper order.
      */
-    public SleepInterval onLoop() {
+    public SleepRange onLoop() {
         for(MiningTask mt : miningTasks) {
-            SleepInterval sleep = mt.onLoop();
-            if(sleep != SleepInterval.NULL) {
+            SleepRange sleep = mt.onLoop();
+            if(sleep != SleepRange.NULL) {
                 return sleep;
             }
         }

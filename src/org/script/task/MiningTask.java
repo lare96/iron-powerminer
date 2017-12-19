@@ -1,8 +1,7 @@
 package org.script.task;
 
 import org.script.IronPmScript;
-import org.script.util.SleepInterval;
-
+import org.script.util.SleepRange;
 
 /**
  * A model that provides implementation for mining tasks.
@@ -26,7 +25,7 @@ public abstract class MiningTask {
     /**
      * Ran when its this task's turn to execute.
      */
-    public abstract SleepInterval onLoop();
+    public abstract SleepRange onLoop();
 
     /**
      * Returns the main script provider.
